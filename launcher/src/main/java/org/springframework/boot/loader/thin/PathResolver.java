@@ -393,10 +393,14 @@ public class PathResolver {
 
 	private String extractArtifactId(Archive archive) throws MalformedURLException {
 		String path = archive.getUrl().getPath();
+
 		if (path.endsWith("!/")) {
 			path = path.substring(0, path.length() - 2);
 		}
+
 		path = StringUtils.getFilename(path);
+
+		path = path.replace(".jar", "");
 		path = path.split("-[0-9]")[0];
 		return path;
 	}
