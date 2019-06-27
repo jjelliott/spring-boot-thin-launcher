@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,9 @@
 package org.springframework.boot.loader.thin;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Properties;
 
@@ -29,6 +32,8 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.rule.OutputCapture;
 import org.springframework.core.io.Resource;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.FileSystemUtils;
+import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -89,6 +94,7 @@ public class ThinJarLauncherTests {
 		launcher.launch(args);
 		verify(resolver).dependencies(any(Resource.class), props.capture());
 		assertThat(props.getValue()).isEmpty();
+		DependencyResolver.close();
 	}
 
 	@Test
@@ -96,6 +102,7 @@ public class ThinJarLauncherTests {
 		String[] args = new String[] { "--thin.classpath",
 				"--thin.archive=src/test/resources/apps/basic", "--thin.profile=foo" };
 		ThinJarLauncher launcher = new ThinJarLauncher(args);
+		DependencyResolver.close();
 		DependencyResolver resolver = mock(DependencyResolver.class);
 		ReflectionTestUtils.setField(DependencyResolver.class, "instance", resolver);
 		ArgumentCaptor<Properties> props = ArgumentCaptor.forClass(Properties.class);
@@ -376,25 +383,37 @@ public class ThinJarLauncherTests {
 	@Test
 	public void repositorySettingsMissing() throws Exception {
 		DependencyResolver.close();
-		deleteRecursively(new File("target/thin/test/repository/com/github/jitpack"));
+		deleteRecursively(new File("target/thin/test/repository/com/example"));
 		String[] args = new String[] { "--thin.root=target/thin/test",
 				"--thin.dryrun=true", "--thin.archive=src/test/resources/apps/jitpack",
 				"--debug" };
 		expected.expect(RuntimeException.class);
-		expected.expectMessage("maven-simple:jar:1.1");
+		expected.expectMessage("maven-simple:jar:1.0");
 		ThinJarLauncher.main(args);
-		assertThat(new File("target/thin/test/repository/com/github/jitpack/maven-simple")
+		assertThat(new File("target/thin/test/repository/com/example/maven/maven-simple")
 				.exists()).isFalse();
 	}
 
 	@Test
 	public void repositorySettingsPresent() throws Exception {
 		DependencyResolver.close();
+		File userhome = new File("target/settings/repo/.m2");
+		if (!userhome.exists()) {
+			userhome.mkdirs();
+		}
+		String settings = StreamUtils.copyToString(
+				new FileInputStream(
+						new File("src/test/resources/settings/repo/.m2/settings.xml")),
+				Charset.defaultCharset());
+		settings = settings.replace("${repo.url}",
+				"file://" + new File("target/test-classes/repo").getAbsolutePath());
+		StreamUtils.copy(settings, Charset.defaultCharset(),
+				new FileOutputStream(new File(userhome, "settings.xml")));
 		String home = System.getProperty("user.home");
 		System.setProperty("user.home",
-				new File("src/test/resources/settings/profile").getAbsolutePath());
+				new File("target/settings/repo").getAbsolutePath());
 		try {
-			deleteRecursively(new File("target/thin/test/repository/com/github/jitpack"));
+			deleteRecursively(new File("target/thin/test/repository/com/example"));
 			String[] args = new String[] { "--thin.root=target/thin/test",
 					"--thin.dryrun=true",
 					"--thin.archive=src/test/resources/apps/jitpack", "--debug" };
@@ -404,7 +423,7 @@ public class ThinJarLauncherTests {
 			System.setProperty("user.home", home);
 		}
 		assertThat(new File("target/thin/test/repository").exists()).isTrue();
-		assertThat(new File("target/thin/test/repository/com/github/jitpack/maven-simple")
+		assertThat(new File("target/thin/test/repository/com/example/maven/maven-simple")
 				.exists()).isTrue();
 	}
 
@@ -429,23 +448,7 @@ public class ThinJarLauncherTests {
 	}
 
 	public static boolean deleteRecursively(File root) {
-		if (root != null && root.exists()) {
-			if (root.isDirectory()) {
-				File[] children = root.listFiles();
-				if (children != null) {
-					for (File child : children) {
-						deleteRecursively(child);
-					}
-				}
-			}
-			boolean deleted = root.delete();
-			if (!deleted) {
-				System.err.println("Cannot delete: " + root);
-			}
-			return deleted;
-		}
-		System.err.println("Did not delete: " + root);
-		return false;
+		return FileSystemUtils.deleteRecursively(root);
 	}
 
 }

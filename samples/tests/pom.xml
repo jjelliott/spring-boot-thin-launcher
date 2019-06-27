@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.example</groupId>
@@ -22,7 +22,7 @@
 		<java.version>1.8</java.version>
 		<maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
 		<spring-boot.version>1.5.2.RELEASE</spring-boot.version>
-		<wrapper.version>1.0.22.BUILD-SNAPSHOT</wrapper.version>
+		<wrapper.version>1.0.23.BUILD-SNAPSHOT</wrapper.version>
 		<gradle.exec>./gradlew</gradle.exec>
 	</properties>
 
@@ -42,10 +42,10 @@
 
 	<build>
 		<plugins>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven-jar-plugin.version}</version>
-            </plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
@@ -88,7 +88,9 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<configuration><skip>${skipExec}</skip></configuration>
+				<configuration>
+					<skip>${skipExec}</skip>
+				</configuration>
 				<executions>
 					<execution>
 						<id>app</id>
@@ -153,7 +155,7 @@
 						<phase>process-test-resources</phase>
 						<configuration>
 							<workingDirectory>${basedir}/../simple</workingDirectory>
- 							<executable>${basedir}/../simple/${gradle.exec}</executable>
+							<executable>${basedir}/../simple/${gradle.exec}</executable>
 							<arguments>
 								<argument>build</argument>
 								<argument>thinResolve</argument>
@@ -168,7 +170,7 @@
 						<phase>process-test-resources</phase>
 						<configuration>
 							<workingDirectory>${basedir}/../multi</workingDirectory>
- 							<executable>${basedir}/../multi/${gradle.exec}</executable>
+							<executable>${basedir}/../multi/${gradle.exec}</executable>
 							<arguments>
 								<argument>build</argument>
 								<argument>:application:thinResolve</argument>
@@ -181,6 +183,35 @@
 				</executions>
 			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.codehaus.mojo</groupId>
+										<artifactId>exec-maven-plugin</artifactId>
+										<versionRange>[1.5.0,)</versionRange>
+										<goals>
+											<goal>exec</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 
 	<profiles>

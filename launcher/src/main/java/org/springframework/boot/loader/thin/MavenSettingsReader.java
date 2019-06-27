@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,6 +56,9 @@ public class MavenSettingsReader {
 	}
 
 	public MavenSettingsReader(String homeDir) {
+		if (homeDir == null) {
+			homeDir = System.getProperty("user.home");
+		}
 		this.homeDir = homeDir;
 	}
 
@@ -63,25 +66,20 @@ public class MavenSettingsReader {
 		Settings settings = loadSettings();
 		SettingsDecryptionResult decrypted = decryptSettings(settings);
 		if (!decrypted.getProblems().isEmpty()) {
-			log.error(
-					"Maven settings decryption failed. Some Maven repositories may be inaccessible");
+			log.error("Maven settings decryption failed. Some Maven repositories may be inaccessible");
 			// Continue - the encrypted credentials may not be used
 		}
 		return new MavenSettings(settings, decrypted);
 	}
 
-	public static void applySettings(MavenSettings settings,
-			DefaultRepositorySystemSession session) {
+	public static void applySettings(MavenSettings settings, DefaultRepositorySystemSession session) {
 		if (settings.getLocalRepository() != null) {
 			try {
-				session.setLocalRepositoryManager(
-						new SimpleLocalRepositoryManagerFactory().newInstance(session,
-								new LocalRepository(settings.getLocalRepository())));
+				session.setLocalRepositoryManager(new SimpleLocalRepositoryManagerFactory().newInstance(session,
+						new LocalRepository(settings.getLocalRepository())));
 			}
 			catch (NoLocalRepositoryManagerException e) {
-				throw new IllegalStateException(
-						"Cannot set local repository to " + settings.getLocalRepository(),
-						e);
+				throw new IllegalStateException("Cannot set local repository to " + settings.getLocalRepository(), e);
 			}
 		}
 		session.setOffline(settings.getOffline());
@@ -97,23 +95,31 @@ public class MavenSettingsReader {
 		}
 		else {
 			log.info("No settings found at: " + settingsFile);
+			String home = System.getProperty("user.home");
+			if (!new File(home).getAbsolutePath().equals(new File(this.homeDir).getAbsolutePath())) {
+				settingsFile = new File(home, ".m2/settings.xml");
+				if (settingsFile.exists()) {
+					log.info("Reading settings from: " + settingsFile);
+				}
+			}
 		}
+		return loadSettings(settingsFile);
+	}
+
+	private Settings loadSettings(File settingsFile) {
 		SettingsBuildingRequest request = new DefaultSettingsBuildingRequest();
 		request.setUserSettingsFile(settingsFile);
 		request.setSystemProperties(System.getProperties());
 		try {
-			return new DefaultSettingsBuilderFactory().newInstance().build(request)
-					.getEffectiveSettings();
+			return new DefaultSettingsBuilderFactory().newInstance().build(request).getEffectiveSettings();
 		}
 		catch (SettingsBuildingException ex) {
-			throw new IllegalStateException(
-					"Failed to build settings from " + settingsFile, ex);
+			throw new IllegalStateException("Failed to build settings from " + settingsFile, ex);
 		}
 	}
 
 	private SettingsDecryptionResult decryptSettings(Settings settings) {
-		DefaultSettingsDecryptionRequest request = new DefaultSettingsDecryptionRequest(
-				settings);
+		DefaultSettingsDecryptionRequest request = new DefaultSettingsDecryptionRequest(settings);
 
 		return createSettingsDecrypter().decrypt(request);
 	}
@@ -125,16 +131,14 @@ public class MavenSettingsReader {
 		return settingsDecrypter;
 	}
 
-	private void setField(Class<?> sourceClass, String fieldName, Object target,
-			Object value) {
+	private void setField(Class<?> sourceClass, String fieldName, Object target, Object value) {
 		try {
 			Field field = sourceClass.getDeclaredField(fieldName);
 			field.setAccessible(true);
 			field.set(target, value);
 		}
 		catch (Exception ex) {
-			throw new IllegalStateException(
-					"Failed to set field '" + fieldName + "' on '" + target + "'", ex);
+			throw new IllegalStateException("Failed to set field '" + fieldName + "' on '" + target + "'", ex);
 		}
 	}
 

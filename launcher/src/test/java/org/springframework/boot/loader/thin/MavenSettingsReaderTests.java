@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,7 +46,7 @@ public class MavenSettingsReaderTests {
 		DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 		MavenSettingsReader.applySettings(reader.readSettings(), session);
 		RemoteRepository repository = new RemoteRepository.Builder("my-server", "default",
-				"http://maven.example.com").build();
+				"https://maven.example.com").build();
 		Proxy proxy = session.getProxySelector().getProxy(repository);
 		repository = new RemoteRepository.Builder(repository).setProxy(proxy).build();
 		assertThat(proxy.getHost()).isEqualTo("proxy.example.com");
@@ -61,8 +61,7 @@ public class MavenSettingsReaderTests {
 	@Test
 	public void repositoryConfiguration() {
 		MavenSettingsReader reader = new MavenSettingsReader(
-				"src/test/resources/settings/proxy");
-		reader = new MavenSettingsReader("src/test/resources/settings/profile");
+				"src/test/resources/settings/profile");
 		DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 		MavenSettings settings = reader.readSettings();
 		assertThat(settings.getActiveProfiles().get(0).getRepositories().get(0))
